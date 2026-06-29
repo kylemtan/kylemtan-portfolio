@@ -1,36 +1,139 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# kylemtan.com — Personal Portfolio
 
-## Getting Started
+Personal portfolio for **Kyle Macasilli-Tan**. Built with Next.js (App Router, static export), TypeScript, and Tailwind CSS. The hero features an interactive SVG node-graph of projects powered by d3-force.
 
-First, run the development server:
+---
+
+## Running locally
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run build   # produces /out
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Serve the static output locally to verify the production build:
 
-## Learn More
+```bash
+npx serve out
+```
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## How to add a project
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Edit one file: [`data/projects.ts`](data/projects.ts)**
 
-## Deploy on Vercel
+Add a new object to the `projects` array:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```ts
+{
+  id: "my-project",           // unique slug, kebab-case
+  title: "My Project",
+  tagline: "One line shown on node hover and in the card.",
+  description: "2–3 sentences for the detail panel.",
+  stack: ["Python", "FastAPI"],
+  liveUrl: "https://...",     // optional
+  codeUrl: "https://...",     // optional
+  status: "live",             // "live" | "in-progress" | omit
+  highlight: "10k users",     // optional metric callout
+  group: "ai",                // "ai" | "ml" | "web" | "research" — drives node color
+  featured: true,             // optional — larger node + "Featured" badge
+},
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+That's it. The node graph, project cards, and detail panel all render from this array automatically.
+
+---
+
+## Resume PDF
+
+Drop your resume at:
+
+```
+public/resume.pdf
+```
+
+The nav "Resume" link and footer "Download PDF" button both point to `/resume.pdf`. Kyle's browsers will open it in a new tab.
+
+---
+
+## Adding a favicon / OG image
+
+- **Favicon:** replace `public/favicon.svg` with your own SVG (or add `favicon.ico`, `favicon-16x16.png`, `favicon-32x32.png`).
+- **OG image:** add `public/og-image.png` (1200 × 630 px). The LinkedIn banner works well as a placeholder. `app/layout.tsx` references it automatically.
+
+---
+
+## Interests section
+
+The "Beyond code" section is stubbed out but commented in. When ready:
+
+1. Open [`data/interests.ts`](data/interests.ts) and uncomment + fill in real interests.
+2. Create `components/Interests.tsx` with your layout.
+3. Import and add `<Interests />` between `<About />` and `<Footer />` in [`app/page.tsx`](app/page.tsx).
+
+---
+
+## Deploying to Render (Static Site)
+
+1. Push this repo to GitHub.
+2. In [Render](https://render.com), create a new **Static Site**.
+3. Connect the GitHub repo.
+4. Set:
+   - **Build command:** `npm install && npm run build`
+   - **Publish directory:** `out`
+5. Click **Deploy**.
+
+### Custom domain (`kylemtan.com`)
+
+In the Render dashboard → your site → **Settings → Custom Domains**:
+
+1. Add `kylemtan.com` and `www.kylemtan.com`.
+2. Follow the DNS instructions Render provides (usually a CNAME or A record pointed at Render's edge).
+3. Render provisions TLS automatically.
+
+---
+
+## Project structure
+
+```
+kylemtan-portfolio/
+├── app/
+│   ├── layout.tsx        # Root layout, metadata, OG tags, fonts
+│   ├── page.tsx          # Single-page shell (Nav + sections)
+│   └── globals.css       # Design tokens (CSS vars), Tailwind, animations
+├── components/
+│   ├── Nav.tsx           # Sticky nav, scroll-aware blur
+│   ├── Hero.tsx          # Hero section — imports NodeGraph dynamically
+│   ├── NodeGraph.tsx     # SVG + d3-force graph (client-only, ssr:false)
+│   ├── ProjectDetail.tsx # Modal panel opened on node click
+│   ├── ProjectCards.tsx  # Semantic project card grid
+│   ├── About.tsx         # Bio + skills + USC badge
+│   └── Footer.tsx        # Contact links + resume CTA
+├── data/
+│   ├── profile.ts        # Name, headline, links — edit here
+│   ├── projects.ts       # ← Add/edit projects here
+│   └── interests.ts      # Stubbed for later
+└── public/
+    ├── favicon.svg       # Replace with real favicon
+    ├── og-image.png      # Add 1200×630 OG image
+    └── resume.pdf        # Drop your resume here
+```
+
+## Tech stack
+
+| Layer | Choice |
+|---|---|
+| Framework | Next.js 16 (App Router) |
+| Language | TypeScript |
+| Styling | Tailwind CSS v4 |
+| Graph | Custom SVG + d3-force (no canvas library) |
+| Font | Geist (via next/font) |
+| Deploy | Render Static Site |
+| Output | `out/` (pure HTML/CSS/JS) |
