@@ -26,7 +26,7 @@ const GROUP_COLORS: Record<string, string> = {
 
 interface GraphNode extends SimulationNodeDatum {
   id: string;
-  type: "hub" | "project";
+  type: "hub" | "project" | "legacy";
   label: string;
   shortLabel: string;
   group?: string;
@@ -37,7 +37,29 @@ interface GraphNode extends SimulationNodeDatum {
 
 interface GraphLink extends SimulationLinkDatum<GraphNode> {
   linkId: string;
+  kind: "primary" | "secondary" | "legacy";
 }
+
+// Ghost satellites are NOT sim nodes — positions are computed geometrically from their anchor.
+// angleOffset is added to the hub→anchor direction (radians). For hub anchors, it's absolute.
+interface GhostDef {
+  id: string;
+  anchorId: string;
+  angleOffset: number;
+  dist: number;
+  radius: number;
+}
+
+const GHOST_DEFS: GhostDef[] = [
+  { id: "gh-hub-a",  anchorId: "hub",           angleOffset: -0.7,  dist: 50, radius: 5 },
+  { id: "gh-hub-b",  anchorId: "hub",           angleOffset:  2.5,  dist: 44, radius: 4 },
+  { id: "gh-sem-a",  anchorId: "sempai",        angleOffset:  0.45, dist: 38, radius: 5 },
+  { id: "gh-sem-b",  anchorId: "sempai",        angleOffset: -0.5,  dist: 32, radius: 4 },
+  { id: "gh-rag-a",  anchorId: "rag-app",       angleOffset:  0.5,  dist: 36, radius: 5 },
+  { id: "gh-dr-a",   anchorId: "dr-classifier", angleOffset: -0.45, dist: 34, radius: 4 },
+  { id: "gh-sp-a",   anchorId: "spardle",       angleOffset:  0.4,  dist: 38, radius: 5 },
+  { id: "gh-sp-b",   anchorId: "spardle",       angleOffset: -0.55, dist: 30, radius: 4 },
+];
 
 interface Props {
   projects: Project[];
@@ -48,6 +70,9 @@ function buildGraphData(projects: Project[]): {
   nodes: GraphNode[];
   links: GraphLink[];
 } {
+  const mainProjects = projects.filter((p) => !p.legacy);
+  const legacyProjects = projects.filter((p) => p.legacy);
+
   const nodes: GraphNode[] = [
     {
       id: "hub",
@@ -57,33 +82,51 @@ function buildGraphData(projects: Project[]): {
       radius: 22,
       color: "#5b9df9",
     },
-    ...projects.map((p) => ({
+    ...mainProjects.map((p) => ({
       id: p.id,
       type: "project" as const,
       label: p.title,
-      shortLabel:
-        p.title.length > 10 ? p.title.split(" ")[0] : p.title,
+      shortLabel: p.title.length > 10 ? p.title.split(" ")[0] : p.title,
       group: p.group,
       projectId: p.id,
       radius: p.featured ? 13 : 10,
       color: GROUP_COLORS[p.group] ?? "#5b9df9",
     })),
+    ...legacyProjects.map((p) => ({
+      id: p.id,
+      type: "legacy" as const,
+      label: p.title,
+      shortLabel: p.title.length > 10 ? p.title.split(" ")[0] : p.title,
+      group: p.group,
+      projectId: p.id,
+      radius: 8,
+      color: "#475569",
+    })),
   ];
 
-  const links: GraphLink[] = projects.map((p) => ({
-    source: "hub",
-    target: p.id,
-    linkId: `hub-${p.id}`,
-  }));
+  const links: GraphLink[] = [
+    ...mainProjects.map((p) => ({
+      source: "hub",
+      target: p.id,
+      linkId: `hub-${p.id}`,
+      kind: "primary" as const,
+    })),
+    ...legacyProjects.map((p) => ({
+      source: "hub",
+      target: p.id,
+      linkId: `hub-${p.id}`,
+      kind: "legacy" as const,
+    })),
+  ];
 
-  // Secondary edges between same-group projects
-  for (let i = 0; i < projects.length; i++) {
-    for (let j = i + 1; j < projects.length; j++) {
-      if (projects[i].group === projects[j].group) {
+  for (let i = 0; i < mainProjects.length; i++) {
+    for (let j = i + 1; j < mainProjects.length; j++) {
+      if (mainProjects[i].group === mainProjects[j].group) {
         links.push({
-          source: projects[i].id,
-          target: projects[j].id,
-          linkId: `${projects[i].id}-${projects[j].id}`,
+          source: mainProjects[i].id,
+          target: mainProjects[j].id,
+          linkId: `${mainProjects[i].id}-${mainProjects[j].id}`,
+          kind: "secondary",
         });
       }
     }
@@ -109,6 +152,7 @@ export default function NodeGraph({ projects, onNodeClick }: Props) {
   const prefersReduced = useRef(false);
   const initialNodes = useRef(buildGraphData(projects).nodes);
   const initialLinks = useRef(buildGraphData(projects).links);
+  const parallaxRef = useRef<SVGGElement>(null);
 
   useEffect(() => {
     prefersReduced.current = window.matchMedia(
@@ -136,7 +180,6 @@ export default function NodeGraph({ projects, onNodeClick }: Props) {
     linksRef.current = links;
     setReady(false);
 
-    // Fix hub to center
     nodes[0].fx = dims.width / 2;
     nodes[0].fy = dims.height / 2;
 
@@ -150,10 +193,7 @@ export default function NodeGraph({ projects, onNodeClick }: Props) {
       )
       .force("charge", forceManyBody<GraphNode>().strength(-450))
       .force("center", forceCenter(dims.width / 2, dims.height / 2))
-      .force(
-        "collide",
-        forceCollide<GraphNode>().radius((d) => d.radius + 28)
-      )
+      .force("collide", forceCollide<GraphNode>().radius((d) => d.radius + 28))
       .alphaDecay(0.025);
 
     let tickCount = 0;
@@ -164,9 +204,7 @@ export default function NodeGraph({ projects, onNodeClick }: Props) {
       if (!svg) return;
 
       linksRef.current.forEach((link) => {
-        const el = svg.querySelector<SVGLineElement>(
-          `[data-link="${link.linkId}"]`
-        );
+        const el = svg.querySelector<SVGLineElement>(`[data-link="${link.linkId}"]`);
         const s = link.source as GraphNode;
         const t = link.target as GraphNode;
         if (el && s.x != null && t.x != null) {
@@ -178,14 +216,41 @@ export default function NodeGraph({ projects, onNodeClick }: Props) {
       });
 
       nodesRef.current.forEach((node) => {
-        const el = svg.querySelector<SVGGElement>(
-          `[data-node="${node.id}"]`
-        );
+        const el = svg.querySelector<SVGGElement>(`[data-node="${node.id}"]`);
         if (el && node.x != null) {
-          el.setAttribute(
-            "transform",
-            `translate(${node.x},${node.y ?? 0})`
-          );
+          el.setAttribute("transform", `translate(${node.x},${node.y ?? 0})`);
+        }
+      });
+
+      // Ghost satellites: position geometrically from their anchor, not via physics
+      const hub = nodesRef.current.find((n) => n.id === "hub");
+      GHOST_DEFS.forEach((def) => {
+        const anchor = nodesRef.current.find((n) => n.id === def.anchorId);
+        if (!anchor?.x || hub?.x == null) return;
+
+        const angle =
+          def.anchorId === "hub"
+            ? def.angleOffset
+            : Math.atan2(
+                (anchor.y ?? 0) - (hub.y ?? 0),
+                (anchor.x ?? 0) - (hub.x ?? 0)
+              ) + def.angleOffset;
+
+        const gx = (anchor.x ?? 0) + Math.cos(angle) * def.dist;
+        const gy = (anchor.y ?? 0) + Math.sin(angle) * def.dist;
+
+        const circleEl = svg.querySelector<SVGCircleElement>(`[data-ghost-node="${def.id}"]`);
+        if (circleEl) {
+          circleEl.setAttribute("cx", String(gx));
+          circleEl.setAttribute("cy", String(gy));
+        }
+
+        const lineEl = svg.querySelector<SVGLineElement>(`[data-ghost-link="${def.id}"]`);
+        if (lineEl) {
+          lineEl.setAttribute("x1", String(anchor.x ?? 0));
+          lineEl.setAttribute("y1", String(anchor.y ?? 0));
+          lineEl.setAttribute("x2", String(gx));
+          lineEl.setAttribute("y2", String(gy));
         }
       });
 
@@ -197,14 +262,12 @@ export default function NodeGraph({ projects, onNodeClick }: Props) {
       setReady(true);
     }
 
-    return () => {
-      sim.stop();
-    };
+    return () => { sim.stop(); };
   }, [dims, projects]);
 
   const handleClick = useCallback(
     (node: GraphNode) => {
-      if (node.type === "project") {
+      if (node.type === "project" || node.type === "legacy") {
         const p = projects.find((pr) => pr.id === node.projectId);
         if (p) onNodeClick(p);
       }
@@ -218,10 +281,7 @@ export default function NodeGraph({ projects, onNodeClick }: Props) {
       return linksRef.current.some((l) => {
         const s = nodeId(l.source);
         const t = nodeId(l.target);
-        return (
-          (s === hoveredId && t === nodeId_) ||
-          (t === hoveredId && s === nodeId_)
-        );
+        return (s === hoveredId && t === nodeId_) || (t === hoveredId && s === nodeId_);
       });
     },
     [hoveredId]
@@ -250,6 +310,19 @@ export default function NodeGraph({ projects, onNodeClick }: Props) {
       className="w-full h-full"
       style={{ minHeight: 380 }}
       aria-label="Interactive project network graph"
+      onMouseMove={(e) => {
+        const g = parallaxRef.current;
+        const svg = svgRef.current;
+        if (!g || !svg) return;
+        const rect = svg.getBoundingClientRect();
+        const dx = ((e.clientX - rect.left) / rect.width  - 0.5) * 22;
+        const dy = ((e.clientY - rect.top)  / rect.height - 0.5) * 22;
+        g.style.transform = `translate(${dx}px, ${dy}px)`;
+      }}
+      onMouseLeave={() => {
+        const g = parallaxRef.current;
+        if (g) g.style.transform = "translate(0px, 0px)";
+      }}
     >
       <svg
         ref={svgRef}
@@ -257,131 +330,130 @@ export default function NodeGraph({ projects, onNodeClick }: Props) {
         height={dims.height}
         style={{
           opacity: ready ? 1 : 0,
-          transition: prefersReduced.current
-            ? "none"
-            : "opacity 0.8s ease",
+          transition: prefersReduced.current ? "none" : "opacity 0.8s ease",
           overflow: "hidden",
         }}
         aria-hidden="true"
       >
         <defs>
-          {/* Node glow */}
-          <filter
-            id="glow-node"
-            x="-60%"
-            y="-60%"
-            width="220%"
-            height="220%"
-          >
+          <filter id="glow-node" x="-60%" y="-60%" width="220%" height="220%">
             <feGaussianBlur stdDeviation="3.5" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
-          {/* Hub glow — stronger */}
-          <filter
-            id="glow-hub"
-            x="-120%"
-            y="-120%"
-            width="340%"
-            height="340%"
-          >
+          <filter id="glow-hub" x="-120%" y="-120%" width="340%" height="340%">
             <feGaussianBlur stdDeviation="9" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
-          {/* Hover glow */}
-          <filter
-            id="glow-hover"
-            x="-100%"
-            y="-100%"
-            width="300%"
-            height="300%"
-          >
+          <filter id="glow-hover" x="-100%" y="-100%" width="300%" height="300%">
             <feGaussianBlur stdDeviation="7" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
-          {/* Label backdrop for readability */}
           <filter id="label-bg">
             <feFlood floodColor="#0a1326" floodOpacity="0.6" result="bg" />
             <feComposite in="bg" in2="SourceGraphic" operator="over" />
           </filter>
         </defs>
 
-        {/* Links */}
+        <g ref={parallaxRef} style={{ transition: "transform 0.35s ease-out", willChange: "transform" }}>
+
+        {/* Ghost lines — behind everything */}
+        <g>
+          {GHOST_DEFS.map((def) => (
+            <line
+              key={`gl-${def.id}`}
+              data-ghost-link={def.id}
+              stroke="rgba(91,157,249,0.15)"
+              strokeWidth={0.75}
+            />
+          ))}
+        </g>
+
+        {/* Main links */}
         <g>
           {links.map((link, i) => {
             const active = linkConnectsHovered(link.linkId);
-            const isPrimary = link.linkId.startsWith("hub-");
+            const isLegacy = link.kind === "legacy";
+            const isPrimary = link.kind === "primary";
             return (
               <line
                 key={link.linkId}
                 data-link={link.linkId}
-                stroke={active ? "#5b9df9" : "rgba(91,157,249,0.18)"}
-                strokeWidth={active ? 1.5 : isPrimary ? 1 : 0.75}
-                className={
-                  !active && !prefersReduced.current ? "link-flow" : ""
+                stroke={
+                  active
+                    ? "#5b9df9"
+                    : isLegacy
+                    ? "rgba(91,157,249,0.09)"
+                    : "rgba(91,157,249,0.18)"
                 }
+                strokeWidth={active ? 1.5 : isPrimary ? 1 : 0.75}
+                className={!active && !isLegacy && !prefersReduced.current ? "link-flow" : ""}
                 style={{
                   animationDelay: `${i * 0.6}s`,
                   animationDuration: `${4 + i * 0.4}s`,
                   transition: "stroke 0.3s, stroke-width 0.25s",
                 }}
-                strokeDasharray={active ? "none" : undefined}
               />
             );
           })}
         </g>
 
-        {/* Nodes */}
+        {/* Ghost nodes — behind main nodes */}
+        <g>
+          {GHOST_DEFS.map((def) => (
+            <circle
+              key={`gn-${def.id}`}
+              data-ghost-node={def.id}
+              r={def.radius}
+              fill="#5b9df9"
+              fillOpacity={0.28}
+              filter="url(#glow-node)"
+              style={{ pointerEvents: "none" }}
+            />
+          ))}
+        </g>
+
+        {/* Main nodes */}
         <g>
           {nodes.map((node) => {
             const isHub = node.type === "hub";
+            const isLegacy = node.type === "legacy";
+            const isClickable = node.type === "project" || isLegacy;
             const hovered = hoveredId === node.id;
             const connected = isConnected(node.id);
             const dimmed =
-              hoveredId !== null &&
-              !hovered &&
-              !connected &&
-              hoveredId !== node.id;
+              hoveredId !== null && !hovered && !connected;
 
             return (
               <g
                 key={node.id}
                 data-node={node.id}
                 style={{
-                  cursor:
-                    node.type === "project" ? "pointer" : "default",
-                  opacity: dimmed ? 0.35 : 1,
+                  cursor: isClickable ? "pointer" : "default",
+                  opacity: dimmed ? 0.35 : isLegacy ? 0.7 : 1,
                   transition: "opacity 0.25s",
                 }}
                 onMouseEnter={() => setHoveredId(node.id)}
                 onMouseLeave={() => setHoveredId(null)}
                 onClick={() => handleClick(node)}
-                role={node.type === "project" ? "button" : undefined}
-                tabIndex={node.type === "project" ? 0 : undefined}
-                aria-label={
-                  node.type === "project"
-                    ? `View ${node.label} details`
-                    : undefined
-                }
+                role={isClickable ? "button" : undefined}
+                tabIndex={isClickable ? 0 : undefined}
+                aria-label={isClickable ? `View ${node.label} details` : undefined}
                 onKeyDown={(e) => {
-                  if (
-                    node.type === "project" &&
-                    (e.key === "Enter" || e.key === " ")
-                  ) {
+                  if (isClickable && (e.key === "Enter" || e.key === " ")) {
                     e.preventDefault();
                     handleClick(node);
                   }
                 }}
               >
-                {/* Pulse ring — hub only */}
                 {isHub && !prefersReduced.current && (
                   <circle
                     r={node.radius}
@@ -391,13 +463,11 @@ export default function NodeGraph({ projects, onNodeClick }: Props) {
                     style={{
                       transformBox: "fill-box",
                       transformOrigin: "center",
-                      animation:
-                        "pulse-ring 2.8s cubic-bezier(0,0.2,0.8,1) infinite",
+                      animation: "pulse-ring 2.8s cubic-bezier(0,0.2,0.8,1) infinite",
                     }}
                   />
                 )}
 
-                {/* Hover outer ring */}
                 {hovered && !isHub && (
                   <circle
                     r={node.radius + 6}
@@ -415,27 +485,16 @@ export default function NodeGraph({ projects, onNodeClick }: Props) {
                   />
                 )}
 
-                {/* Main circle */}
                 <circle
                   r={hovered && !isHub ? node.radius + 2 : node.radius}
                   fill={node.color}
-                  fillOpacity={
-                    isHub ? 0.95 : hovered || connected ? 1 : 0.8
-                  }
+                  fillOpacity={isHub ? 0.95 : hovered || connected ? 1 : 0.8}
                   filter={
-                    isHub
-                      ? "url(#glow-hub)"
-                      : hovered
-                      ? "url(#glow-hover)"
-                      : "url(#glow-node)"
+                    isHub ? "url(#glow-hub)" : hovered ? "url(#glow-hover)" : "url(#glow-node)"
                   }
-                  style={{
-                    transition:
-                      "r 0.2s ease, fill-opacity 0.2s ease",
-                  }}
+                  style={{ transition: "r 0.2s ease, fill-opacity 0.2s ease" }}
                 />
 
-                {/* Inner specular highlight */}
                 <circle
                   r={node.radius * 0.38}
                   cx={-(node.radius * 0.22)}
@@ -445,7 +504,6 @@ export default function NodeGraph({ projects, onNodeClick }: Props) {
                   style={{ pointerEvents: "none" }}
                 />
 
-                {/* Hub monogram */}
                 {isHub && (
                   <text
                     textAnchor="middle"
@@ -455,8 +513,7 @@ export default function NodeGraph({ projects, onNodeClick }: Props) {
                     fontWeight="700"
                     letterSpacing="1.5"
                     style={{
-                      fontFamily:
-                        "var(--font-geist-mono, monospace)",
+                      fontFamily: "var(--font-geist-mono, monospace)",
                       userSelect: "none",
                       pointerEvents: "none",
                     }}
@@ -465,20 +522,20 @@ export default function NodeGraph({ projects, onNodeClick }: Props) {
                   </text>
                 )}
 
-                {/* Node label */}
                 <text
                   y={node.radius + 15}
                   textAnchor="middle"
                   fill={
                     hovered || connected
                       ? "var(--text-primary)"
+                      : isLegacy
+                      ? "rgba(148,163,184,0.55)"
                       : "var(--text-muted)"
                   }
-                  fontSize={isHub ? 11 : 10}
+                  fontSize={isHub ? 11 : isLegacy ? 9 : 10}
                   fontWeight={isHub ? "600" : "400"}
                   style={{
-                    fontFamily:
-                      "var(--font-geist-sans, system-ui)",
+                    fontFamily: "var(--font-geist-sans, system-ui)",
                     userSelect: "none",
                     pointerEvents: "none",
                     transition: "fill 0.2s",
@@ -490,9 +547,10 @@ export default function NodeGraph({ projects, onNodeClick }: Props) {
             );
           })}
         </g>
+
+        </g>{/* end parallax */}
       </svg>
 
-      {/* Keyboard / screen-reader project list */}
       <ul className="sr-only">
         {projects.map((p) => (
           <li key={p.id}>

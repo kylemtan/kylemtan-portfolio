@@ -6,10 +6,11 @@ export type Project = {
   stack: string[];
   liveUrl?: string;
   codeUrl?: string;
-  status?: "live" | "in-progress";
+  status?: "live" | "in-progress" | "archived";
   highlight?: string;
   group: "ai" | "ml" | "web" | "research";
   featured?: boolean;
+  legacy?: boolean;
 };
 
 export const projects: Project[] = [
@@ -49,14 +50,41 @@ export const projects: Project[] = [
   },
   {
     id: "spardle",
-    title: "Spardle",
+    title: "Spardle!",
     tagline: "Real-time multiplayer Wordle with live head-to-head play.",
     description:
       "A multiplayer take on Wordle with live head-to-head play, real-time state sync, and a clean competitive UI.",
     highlight: "3,000+ users at peak",
     stack: ["React", "Node.js", "Socket.IO"],
-    liveUrl: "https://spardle.netlify.app",
+    liveUrl: "https://spardle.onrender.com",
     status: "live",
     group: "web",
+  },
+
+  // ── Earlier work ──────────────────────────────────────────────────────────
+
+  {
+    id: "jimbogames",
+    title: "JimboGames",
+    tagline: "Browser minigame hub with room-based multiplayer lobbies.",
+    description:
+      "A multiplayer minigame platform built in high school. Players create accounts, connect to a shared room, and choose from a collection of party games to play together in real time.",
+    stack: ["JavaScript", "Node.js", "Socket.IO"],
+    liveUrl: "https://jimbogames.netlify.app/hi",
+    status: "archived",
+    group: "web",
+    legacy: true,
+  },
+  {
+    id: "aquarium-portfolio",
+    title: "Aquarium Portfolio",
+    tagline: "A pixel-art fish tank where each fish is a project.",
+    description:
+      "My sophomore-year portfolio reimagined as an interactive aquarium. Fish drift freely across the screen, your cursor becomes a net, and catching one reveals the project or internship it represents. Built entirely from scratch with pixel art animations.",
+    stack: ["JavaScript", "HTML/CSS", "Canvas"],
+    liveUrl: "https://kylemtan.netlify.app/",
+    status: "archived",
+    group: "web",
+    legacy: true,
   },
 ];

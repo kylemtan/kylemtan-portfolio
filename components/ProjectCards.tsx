@@ -17,6 +17,9 @@ const GROUP_COLORS: Record<string, string> = {
 };
 
 export default function ProjectCards() {
+  const mainProjects = projects.filter((p) => !p.legacy);
+  const legacyProjects = projects.filter((p) => p.legacy);
+
   return (
     <section
       id="projects"
@@ -63,13 +66,13 @@ export default function ProjectCards() {
         </p>
       </div>
 
-      {/* Cards grid */}
+      {/* Main cards grid */}
       <div
         className="grid grid-cols-1 md:grid-cols-2 gap-5"
         role="list"
         aria-label="Project list"
       >
-        {projects.map((project) => {
+        {mainProjects.map((project) => {
           const groupColor =
             GROUP_COLORS[project.group] ?? "#5b9df9";
 
@@ -261,6 +264,156 @@ export default function ProjectCards() {
           );
         })}
       </div>
+
+      {/* Earlier work */}
+      {legacyProjects.length > 0 && (
+        <div className="mt-20">
+          <div className="flex items-center gap-4 mb-8">
+            <div
+              className="h-px flex-1"
+              style={{ background: "var(--border)" }}
+              aria-hidden="true"
+            />
+            <span
+              className="font-mono text-xs tracking-[0.2em] uppercase"
+              style={{ color: "var(--text-muted)" }}
+            >
+              Earlier work
+            </span>
+            <div
+              className="h-px flex-1"
+              style={{ background: "var(--border)" }}
+              aria-hidden="true"
+            />
+          </div>
+
+          <div
+            className="grid grid-cols-1 md:grid-cols-2 gap-5"
+            role="list"
+            aria-label="Earlier projects"
+          >
+            {legacyProjects.map((project) => {
+              return (
+                <article
+                  key={project.id}
+                  role="listitem"
+                  className="group relative flex flex-col rounded-xl border p-6 transition-all duration-300"
+                  style={{
+                    background: "var(--bg-card)",
+                    borderColor: "var(--border)",
+                    opacity: 0.75,
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = "rgba(148,163,184,0.3)";
+                    e.currentTarget.style.opacity = "1";
+                    e.currentTarget.style.transform = "translateY(-2px)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = "var(--border)";
+                    e.currentTarget.style.opacity = "0.75";
+                    e.currentTarget.style.transform = "translateY(0)";
+                  }}
+                >
+                  {/* Top row: badges */}
+                  <div className="flex items-center gap-2 mb-4">
+                    <span
+                      className="font-mono text-xs px-2 py-0.5 rounded border tracking-wider"
+                      style={{
+                        color: "var(--text-muted)",
+                        borderColor: "var(--border)",
+                        background: "transparent",
+                      }}
+                    >
+                      {GROUP_LABELS[project.group] ?? project.group}
+                    </span>
+                    <span
+                      className="font-mono text-xs px-2 py-0.5 rounded border tracking-wider"
+                      style={{
+                        color: "var(--text-muted)",
+                        borderColor: "var(--border)",
+                        background: "transparent",
+                      }}
+                    >
+                      Earlier work
+                    </span>
+                  </div>
+
+                  {/* Title */}
+                  <h3
+                    className="text-lg font-semibold mb-1.5"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    {project.title}
+                  </h3>
+
+                  {/* Tagline */}
+                  <p
+                    className="text-sm mb-4 flex-1"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    {project.tagline}
+                  </p>
+
+                  {/* Stack chips */}
+                  <div
+                    className="flex flex-wrap gap-1.5 mb-5"
+                    aria-label={`Tech stack: ${project.stack.join(", ")}`}
+                  >
+                    {project.stack.map((tech) => (
+                      <span
+                        key={tech}
+                        className="font-mono text-xs px-2 py-0.5 rounded border"
+                        style={{
+                          color: "var(--text-muted)",
+                          borderColor: "var(--border)",
+                          background: "transparent",
+                        }}
+                      >
+                        {tech}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Action links */}
+                  {project.liveUrl && (
+                    <>
+                      <div
+                        className="w-full h-px mb-4"
+                        style={{ background: "var(--border)" }}
+                        aria-hidden="true"
+                      />
+                      <div className="flex items-center gap-3">
+                        <a
+                          href={project.liveUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 text-sm px-3.5 py-1.5 rounded-lg border transition-all"
+                          style={{
+                            color: "var(--text-muted)",
+                            borderColor: "var(--border)",
+                            background: "transparent",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = "rgba(148,163,184,0.4)";
+                            e.currentTarget.style.color = "var(--text-primary)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = "var(--border)";
+                            e.currentTarget.style.color = "var(--text-muted)";
+                          }}
+                          aria-label={`Open ${project.title} live site`}
+                        >
+                          ↗ View
+                        </a>
+                      </div>
+                    </>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </section>
   );
 }
