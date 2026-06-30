@@ -70,7 +70,7 @@ export const projects: Project[] = [
     description:
       "A multiplayer minigame platform built in high school. Players create accounts, connect to a shared room, and choose from a collection of party games to play together in real time.",
     stack: ["JavaScript", "Node.js", "Socket.IO"],
-    liveUrl: "https://jimbogames.netlify.app/hi",
+    liveUrl: "https://jimbogames.netlify.app",
     status: "archived",
     group: "web",
     legacy: true,
