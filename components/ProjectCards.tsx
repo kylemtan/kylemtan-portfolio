@@ -52,17 +52,8 @@ export default function ProjectCards() {
           className="mt-3 text-sm max-w-md"
           style={{ color: "var(--text-muted)" }}
         >
-          From AI agents to neural networks — each project lives in{" "}
-          <code
-            className="font-mono text-xs px-1.5 py-0.5 rounded"
-            style={{
-              background: "var(--accent-dim)",
-              color: "var(--accent-soft)",
-            }}
-          >
-            data/projects.ts
-          </code>
-          . Adding a new one takes editing that file alone.
+          A selection of projects I&apos;ve built, spanning AI agents, machine
+          learning, and full-stack apps.
         </p>
       </div>
 
@@ -158,10 +149,18 @@ export default function ProjectCards() {
 
               {/* Tagline */}
               <p
+                className="text-sm font-medium mb-2"
+                style={{ color: "var(--text-primary)" }}
+              >
+                {project.tagline}
+              </p>
+
+              {/* Description */}
+              <p
                 className="text-sm mb-4 flex-1"
                 style={{ color: "var(--text-muted)" }}
               >
-                {project.tagline}
+                {project.description}
               </p>
 
               {/* Highlight metric */}
@@ -348,10 +347,18 @@ export default function ProjectCards() {
 
                   {/* Tagline */}
                   <p
+                    className="text-sm font-medium mb-2"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    {project.tagline}
+                  </p>
+
+                  {/* Description */}
+                  <p
                     className="text-sm mb-4 flex-1"
                     style={{ color: "var(--text-muted)" }}
                   >
-                    {project.tagline}
+                    {project.description}
                   </p>
 
                   {/* Stack chips */}
