@@ -38,9 +38,9 @@ export default function Nav() {
           href="#hero"
           className="font-mono text-xs tracking-[0.2em] uppercase transition-colors"
           style={{ color: "var(--accent)" }}
-          aria-label="Kyle Macasilli-Tan — back to top"
+          aria-label={`${profile.name} — back to top`}
         >
-          KMT
+          {profile.shortName}
         </Link>
 
         {/* Desktop links */}

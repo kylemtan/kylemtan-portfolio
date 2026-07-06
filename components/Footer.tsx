@@ -2,6 +2,9 @@
 
 import { profile } from "@/data/profile";
 
+const stripProtocol = (url: string) =>
+  url.replace(/^https?:\/\/(www\.)?/, "");
+
 const LINKS = [
   {
     href: `mailto:${profile.email}`,
@@ -12,13 +15,13 @@ const LINKS = [
   {
     href: profile.linkedin,
     label: "LinkedIn",
-    display: "linkedin.com/in/kyle-macasilli-tan",
+    display: stripProtocol(profile.linkedin),
     external: true,
   },
   {
     href: profile.github,
     label: "GitHub",
-    display: "github.com/kylemtan",
+    display: stripProtocol(profile.github),
     external: true,
   },
 ];
@@ -124,13 +127,13 @@ export default function Footer() {
               className="font-mono text-2xl font-bold mb-1"
               style={{ color: "var(--accent)" }}
             >
-              KMT
+              {profile.shortName}
             </p>
             <p
               className="font-mono text-xs"
               style={{ color: "var(--text-muted)" }}
             >
-              kylemtan.com
+              {stripProtocol(profile.siteUrl)}
             </p>
           </div>
         </div>
@@ -144,7 +147,7 @@ export default function Footer() {
             className="font-mono text-xs"
             style={{ color: "var(--text-muted)", opacity: 0.4 }}
           >
-            © {year} Kyle Macasilli-Tan
+            © {year} {profile.name}
           </p>
           <p
             className="font-mono text-xs"

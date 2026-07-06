@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { profile } from "@/data/profile";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -12,18 +13,17 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const BASE_URL = "https://kylemtan.com";
+const titleTag = `${profile.name} — ${profile.roleTitle}`;
 
 export const metadata: Metadata = {
-  metadataBase: new URL(BASE_URL),
+  metadataBase: new URL(profile.siteUrl),
   title: {
-    default: "Kyle Macasilli-Tan — AI & Software Engineer",
-    template: "%s | Kyle Macasilli-Tan",
+    default: titleTag,
+    template: `%s | ${profile.name}`,
   },
-  description:
-    "CS + AI student at USC (BS/MS, Presidential Scholar) building AI products that ship. Strongest in Python and PyTorch across LLMs, RAG, and agent tooling. Seeking Summer 2027 internships.",
+  description: profile.summary,
   keywords: [
-    "Kyle Macasilli-Tan",
+    profile.name,
     "software engineer",
     "machine learning",
     "AI",
@@ -34,28 +34,26 @@ export const metadata: Metadata = {
     "LLM",
     "RAG",
   ],
-  authors: [{ name: "Kyle Macasilli-Tan" }],
+  authors: [{ name: profile.name }],
   openGraph: {
     type: "website",
-    url: BASE_URL,
-    siteName: "Kyle Macasilli-Tan",
-    title: "Kyle Macasilli-Tan — AI & Software Engineer",
-    description:
-      "CS + AI student at USC building AI products that ship. LLMs · RAG · agent tooling · full stack.",
+    url: profile.siteUrl,
+    siteName: profile.name,
+    title: titleTag,
+    description: profile.shortSummary,
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Kyle Macasilli-Tan — AI & Software Engineer",
+        alt: titleTag,
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Kyle Macasilli-Tan — AI & Software Engineer",
-    description:
-      "CS + AI student at USC building AI products that ship. LLMs · RAG · agent tooling · full stack.",
+    title: titleTag,
+    description: profile.shortSummary,
     images: ["/og-image.png"],
   },
   robots: {

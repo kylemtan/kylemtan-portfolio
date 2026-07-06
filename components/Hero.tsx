@@ -54,6 +54,7 @@ const LINKS = [
 
 export default function Hero() {
   const [activeProject, setActiveProject] = useState<Project | null>(null);
+  const [firstName, ...restName] = profile.name.split(" ");
 
   return (
     <>
@@ -103,7 +104,7 @@ export default function Hero() {
                   className="font-mono text-xs tracking-[0.2em] uppercase"
                   style={{ color: "var(--accent)" }}
                 >
-                  AI · Software Engineering · USC
+                  {profile.roleLabel}
                 </span>
               </div>
 
@@ -113,10 +114,10 @@ export default function Hero() {
                   className="text-4xl sm:text-5xl lg:text-6xl font-semibold leading-[1.08] tracking-tight"
                   style={{ color: "var(--text-primary)" }}
                 >
-                  Kyle
+                  {firstName}
                   <br />
                   <span style={{ color: "var(--accent-soft)" }}>
-                    Macasilli-Tan
+                    {restName.join(" ")}
                   </span>
                 </h1>
               </div>
@@ -218,18 +219,21 @@ export default function Hero() {
 
         {/* Scroll indicator */}
         <div
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 animate-bounce"
           aria-hidden="true"
         >
           <div
             className="font-mono text-xs tracking-widest uppercase"
-            style={{ color: "var(--text-muted)", opacity: 0.5 }}
+            style={{
+              color: "var(--accent-soft)",
+              animation: "text-glow-pulse 2s ease-in-out infinite",
+            }}
           >
             scroll
           </div>
           <div
             className="w-px h-8 animate-pulse"
-            style={{ background: "var(--border)" }}
+            style={{ background: "var(--accent)" }}
           />
         </div>
       </section>

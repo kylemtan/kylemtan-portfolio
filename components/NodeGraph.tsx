@@ -16,6 +16,7 @@ import {
   SimulationLinkDatum,
 } from "d3-force";
 import { Project } from "@/data/projects";
+import { profile } from "@/data/profile";
 
 const GROUP_COLORS: Record<string, string> = {
   ai: "#5b9df9",
@@ -55,7 +56,7 @@ const GHOST_DEFS: GhostDef[] = [
   { id: "gh-hub-b",  anchorId: "hub",           angleOffset:  2.5,  dist: 44, radius: 4 },
   { id: "gh-sem-a",  anchorId: "sempai",        angleOffset:  0.45, dist: 38, radius: 5 },
   { id: "gh-sem-b",  anchorId: "sempai",        angleOffset: -0.5,  dist: 32, radius: 4 },
-  { id: "gh-rag-a",  anchorId: "rag-app",       angleOffset:  0.5,  dist: 36, radius: 5 },
+  { id: "gh-rag-a",  anchorId: "gpt-torch",     angleOffset:  0.5,  dist: 36, radius: 5 },
   { id: "gh-dr-a",   anchorId: "dr-classifier", angleOffset: -0.45, dist: 34, radius: 4 },
   { id: "gh-sp-a",   anchorId: "spardle",       angleOffset:  0.4,  dist: 38, radius: 5 },
   { id: "gh-sp-b",   anchorId: "spardle",       angleOffset: -0.55, dist: 30, radius: 4 },
@@ -77,8 +78,8 @@ function buildGraphData(projects: Project[]): {
     {
       id: "hub",
       type: "hub",
-      label: "Kyle Macasilli-Tan",
-      shortLabel: "KMT",
+      label: profile.name,
+      shortLabel: profile.shortName,
       radius: 22,
       color: "#5b9df9",
     },
@@ -180,8 +181,22 @@ export default function NodeGraph({ projects, onNodeClick }: Props) {
     linksRef.current = links;
     setReady(false);
 
-    nodes[0].fx = dims.width / 2;
-    nodes[0].fy = dims.height / 2;
+    const centerX = dims.width / 2;
+    const centerY = dims.height / 2;
+
+    nodes[0].fx = centerX;
+    nodes[0].fy = centerY;
+
+    // Seed non-hub nodes on a ring around the hub instead of letting
+    // d3-force default them near the SVG origin (0,0) — otherwise they
+    // all start clustered at the top-left corner and fan out unevenly.
+    const others = nodes.slice(1);
+    others.forEach((n, i) => {
+      const angle = (i / others.length) * Math.PI * 2;
+      const radius = 150;
+      n.x = centerX + Math.cos(angle) * radius;
+      n.y = centerY + Math.sin(angle) * radius;
+    });
 
     const sim = forceSimulation<GraphNode>(nodes)
       .force(
@@ -518,7 +533,7 @@ export default function NodeGraph({ projects, onNodeClick }: Props) {
                       pointerEvents: "none",
                     }}
                   >
-                    KMT
+                    {profile.shortName}
                   </text>
                 )}
 

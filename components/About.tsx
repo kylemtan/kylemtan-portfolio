@@ -2,20 +2,6 @@
 
 import { profile } from "@/data/profile";
 
-const SKILLS = [
-  "Python",
-  "PyTorch",
-  "TypeScript",
-  "React",
-  "FastAPI",
-  "LLMs",
-  "RAG",
-  "Agent tooling",
-  "Node.js",
-  "SQL",
-  "Git",
-];
-
 export default function About() {
   return (
     <section
@@ -46,9 +32,7 @@ export default function About() {
             className="text-3xl sm:text-4xl font-semibold tracking-tight mb-6"
             style={{ color: "var(--text-primary)" }}
           >
-            Builder first,
-            <br />
-            researcher second.
+            {profile.aboutHeadline}
           </h2>
 
           <p
@@ -62,11 +46,7 @@ export default function About() {
             className="text-sm leading-relaxed mb-8"
             style={{ color: "var(--text-muted)" }}
           >
-            I&apos;m drawn to the gap between &quot;works in a notebook&quot;
-            and &quot;ships to users.&quot; Whether it&apos;s wiring an LLM
-            to a grocery API or training a CV model on medical imaging
-            data, I care most about getting things across that gap cleanly
-            and fast.
+            {profile.bio}
           </p>
 
           <div
@@ -89,13 +69,13 @@ export default function About() {
                 className="font-medium text-sm"
                 style={{ color: "var(--text-primary)" }}
               >
-                USC · BS/MS Computer Science + AI
+                {profile.education.school}
               </div>
               <div
                 className="text-xs mt-0.5"
                 style={{ color: "var(--text-muted)" }}
               >
-                Presidential Scholar · Los Angeles, CA
+                {profile.education.distinction} · {profile.location}
               </div>
             </div>
           </div>
@@ -115,7 +95,7 @@ export default function About() {
             role="list"
             aria-label="Skills"
           >
-            {SKILLS.map((skill) => (
+            {profile.skills.map((skill) => (
               <span
                 key={skill}
                 role="listitem"
@@ -160,9 +140,7 @@ export default function About() {
               className="text-sm"
               style={{ color: "var(--text-soft)" }}
             >
-              Seeking Summer 2027 software-engineering and ML
-              internships. Based in Los Angeles; open to remote or
-              relocation.
+              {profile.seeking}
             </p>
           </div>
         </div>

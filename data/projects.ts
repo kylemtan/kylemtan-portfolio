@@ -95,7 +95,7 @@ export const projects: Project[] = [
     title: "Aquarium Portfolio",
     tagline: "A pixel-art fish tank where every fish is a project.",
     description:
-      "My sophomore-year portfolio reimagined as an interactive aquarium: fish drift across the screen, your cursor becomes a net, and catching one reveals the project or internship it represents. Hand-built with original pixel-art animations.",
+      "My sophomore-year highschool portfolio reimagined as an interactive aquarium: fish drift across the screen, your cursor becomes a net, and catching one reveals the project or internship it represents. Hand-built with original pixel-art animations.",
     stack: ["JavaScript", "HTML/CSS", "Canvas"],
     liveUrl: "https://kylemtan.netlify.app",
     status: "archived",
